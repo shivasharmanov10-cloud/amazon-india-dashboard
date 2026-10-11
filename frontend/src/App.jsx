@@ -1,4 +1,6 @@
 
+
+
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Activity,
@@ -15,25 +17,30 @@ import {
   Download,
   LayoutDashboard,
   MapPinned,
+  Menu,
   Package,
   RefreshCw,
   Search,
   ShoppingBag,
   Truck,
   Wallet,
+  X,
 } from 'lucide-react'
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
   ResponsiveContainer,
-  Tooltip,
+  BarChart,
+  Bar,
+  ComposedChart,
+  Line,
+  CartesianGrid,
   XAxis,
   YAxis,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+  ReferenceLine,
 } from 'recharts'
 import './App.css'
 const API = `${(import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '')}/api/dashboard`
@@ -100,6 +107,11 @@ function downloadCSV(filename, rows) {
 
   window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
+const formatLakhs = (value) => {
+  const amount = Number(value) || 0
+
+  return `₹${(amount / 100000).toFixed(0)}L`
+}
 
 function App() {
   const [filters, setFilters] = useState({
@@ -115,6 +127,7 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [activePage, setActivePage] = useState('Overview')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const [productSearch, setProductSearch] = useState('')
   const [riskFilter, setRiskFilter] = useState('all')
@@ -434,6 +447,7 @@ function App() {
 
   function navigateTo(label, target) {
     setActivePage(label)
+    setMobileMenuOpen(false)
 
     document.getElementById(target)?.scrollIntoView({
       behavior: 'smooth',
@@ -443,7 +457,29 @@ function App() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      {mobileMenuOpen && (
+        <button
+          type="button"
+          className="mobile-sidebar-overlay"
+          aria-label="Close navigation menu"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`sidebar ${mobileMenuOpen ? 'sidebar-open' : ''}`}
+      >
+        {mobileMenuOpen && (
+          <button
+            type="button"
+            className="mobile-sidebar-close"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close navigation menu"
+          >
+            <X size={22} />
+          </button>
+        )}
+
         <div className="brand">
           <div className="brand-mark">
             <Activity size={24} />
@@ -477,7 +513,7 @@ function App() {
             <span className="system-indicator" />
             <div>
               <strong>Analytics engine</strong>
-              <small>Local API connection</small>
+             
             </div>
           </div>
 
@@ -493,6 +529,16 @@ function App() {
 
       <main className="main-content" id="overview">
         <header className="topbar">
+          <button
+            type="button"
+            className="mobile-menu-toggle"
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="Open navigation menu"
+            aria-expanded={mobileMenuOpen}
+          >
+            <Menu size={22} />
+          </button>
+
           <div className="breadcrumb">
             <span>Workspace</span>
             <span className="breadcrumb-divider">/</span>
@@ -501,8 +547,7 @@ function App() {
 
           <div className="topbar-actions">
             <div className="live-badge">
-              <span />
-              {loading ? 'Refreshing analytics' : error ? 'Connection issue' : 'Connected dashboard'}
+            
             </div>
 
             <button
@@ -538,14 +583,7 @@ function App() {
               outcomes in one place.
             </p>
           </div>
-
-          <div className="report-date">
-            <CalendarDays size={18} />
-            <div>
-              <strong>Live analytics</strong>
-              <small>Powered by your Excel dataset</small>
-            </div>
-          </div>
+          
         </section>
 
         <section className="filter-panel">
@@ -669,51 +707,125 @@ function App() {
                 <div className="chart-container trend-chart">
                   {trend.length ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={trend}
-                        margin={{ top: 12, right: 8, left: 4, bottom: 0 }}
-                      >
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          vertical={false}
-                          stroke="#edf0f6"
-                        />
-                        <XAxis
-                          dataKey="month"
-                          tick={{ fontSize: 11, fill: '#8a93a5' }}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis
-                          tickFormatter={formatCompactINR}
-                          tick={{ fontSize: 11, fill: '#8a93a5' }}
-                          tickLine={false}
-                          axisLine={false}
-                          width={78}
-                        />
-                        <Tooltip
-                          formatter={(value) => formatINR(value)}
-                          contentStyle={{
-                            border: '1px solid #edf0f6',
-                            borderRadius: 12,
-                          }}
-                        />
-                        <Legend />
-                        <Bar
-                          dataKey="sales"
-                          name="Sales"
-                          fill="#635bff"
-                          radius={[5, 5, 0, 0]}
-                          maxBarSize={28}
-                        />
-                        <Bar
-                          dataKey="profit"
-                          name="Profit"
-                          fill="#19b89a"
-                          radius={[5, 5, 0, 0]}
-                          maxBarSize={28}
-                        />
-                      </BarChart>
+<ComposedChart
+  data={trend}
+  margin={{ top: 12, right: 8, left: 0, bottom: 12 }}
+>
+  <CartesianGrid
+    strokeDasharray="3 3"
+    vertical={false}
+    stroke="#e9edf5"
+  />
+
+  <XAxis
+  dataKey="month"
+  tick={{ fontSize: 10, fill: '#647087' }}
+  tickLine={false}
+  axisLine={false}
+  interval="preserveStartEnd"
+  minTickGap={24}
+  tickFormatter={(value) => {
+    const [year, month] = value.split('-')
+
+    return new Date(
+      Number(year),
+      Number(month) - 1,
+      1,
+    ).toLocaleDateString('en-IN', {
+      month: 'short',
+      year: '2-digit',
+    })
+  }}
+/>
+
+  <YAxis
+    yAxisId="sales"
+    orientation="left"
+    tickFormatter={formatLakhs}
+    tick={{ fontSize: 11, fill: '#635bff' }}
+    tickLine={false}
+    axisLine={false}
+    width={65}
+    label={{
+      value: 'Sales (₹)',
+      angle: -90,
+      position: 'insideLeft',
+      fill: '#635bff',
+      fontSize: 12,
+    }}
+  />
+
+  <YAxis
+    yAxisId="profit"
+    orientation="right"
+    tickFormatter={formatLakhs}
+    tick={{ fontSize: 11, fill: '#10b981' }}
+    tickLine={false}
+    axisLine={false}
+    width={65}
+    label={{
+      value: 'Profit (₹)',
+      angle: 90,
+      position: 'insideRight',
+      fill: '#10b981',
+      fontSize: 12,
+    }}
+  />
+
+  <Tooltip
+    formatter={(value, name) => [
+      formatINR(value),
+      name,
+    ]}
+    labelFormatter={(label) => {
+      const [year, month] = label.split('-')
+
+      return new Date(
+        Number(year),
+        Number(month) - 1,
+        1,
+      ).toLocaleDateString('en-IN', {
+        month: 'long',
+        year: 'numeric',
+      })
+    }}
+    contentStyle={{
+      border: '1px solid #e9edf5',
+      borderRadius: 12,
+      padding: '12px',
+    }}
+  />
+
+  <Legend
+    verticalAlign="bottom"
+    wrapperStyle={{ paddingTop: 14 }}
+  />
+
+  <Bar
+    yAxisId="sales"
+    dataKey="sales"
+    name="Sales"
+    fill="#635bff"
+    radius={[5, 5, 0, 0]}
+    maxBarSize={25}
+  />
+
+  <Line
+    yAxisId="profit"
+    dataKey="profit"
+    name="Profit"
+    type="monotone"
+    stroke="#10b981"
+    strokeWidth={3}
+    dot={{
+      r: 3,
+      fill: '#10b981',
+      strokeWidth: 1,
+      stroke: '#ffffff',
+    }}
+    activeDot={{ r: 6 }}
+  />
+</ComposedChart>
                     </ResponsiveContainer>
                   ) : (
                     <div className="empty-state">
@@ -740,8 +852,8 @@ function App() {
                           data={categories}
                           dataKey="sales"
                           nameKey="category"
-                          innerRadius={66}
-                          outerRadius={100}
+                          innerRadius="48%"
+                          outerRadius="72%"
                           paddingAngle={3}
                           stroke="none"
                         >
