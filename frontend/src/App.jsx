@@ -36,8 +36,8 @@ import {
   YAxis,
 } from 'recharts'
 import './App.css'
+const API = `${(import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '')}/api/dashboard`
 
-const API = 'http://127.0.0.1:8000/api/dashboard'
 
 const COLORS = [
   '#635bff',

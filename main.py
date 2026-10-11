@@ -1,7 +1,7 @@
 
+import os
 from datetime import date
 from typing import Annotated
-
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from analytics import (
@@ -29,9 +29,14 @@ app = FastAPI(
     version="1.1.0",
 )
 
+frontend_origin = os.getenv(
+    "FRONTEND_ORIGIN",
+    "http://localhost:5173",
+).rstrip("/")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[frontend_origin],
     allow_credentials=False,
     allow_methods=["GET"],
     allow_headers=["*"],
