@@ -29,14 +29,18 @@ app = FastAPI(
     version="1.1.0",
 )
 
-frontend_origin = os.getenv(
-    "FRONTEND_ORIGIN",
-    "http://localhost:5173",
-).rstrip("/")
+frontend_origins = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv(
+        "FRONTEND_ORIGINS",
+        "http://localhost:5173,https://amazon-india-dashboard.vercel.app,https://amazon-india-dashboard-git-main-shiva-sharma-s-projects.vercel.app",
+    ).split(",")
+    if origin.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[frontend_origin],
+    allow_origins=frontend_origins,
     allow_credentials=False,
     allow_methods=["GET"],
     allow_headers=["*"],
